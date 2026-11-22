@@ -1,6 +1,6 @@
-// midi_host.h -- a minimal USB MIDI host class driver for TinyUSB 0.18 (the
-// pico-sdk's, which has MIDI device support but no MIDI host). One device:
-// its MIDI IN, and its MIDI OUT if it has one.
+// midi_host.h -- a minimal USB MIDI host class driver for TinyUSB (sdk/tinyusb,
+// 0.21, whose own MIDI host driver tusb_config.h leaves out). One device: its
+// MIDI IN, and its MIDI OUT if it has one.
 #pragma once
 #include <stdbool.h>
 #include <stdint.h>

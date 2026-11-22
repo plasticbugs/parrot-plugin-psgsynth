@@ -9,11 +9,14 @@ typedef struct {
     uint8_t ms_itf;             // the MIDIStreaming interface's number
     const uint8_t *ep_in;       // its first IN endpoint descriptor (bulk, or interrupt)
     const uint8_t *ep_out;      // its first OUT endpoint descriptor, or NULL
+    uint32_t len;               // bytes from desc to the end of that interface
 } usbmidi_found_t;
 
 // Walk len bytes of descriptors from an interface descriptor of class Audio
 // (Audio Control, or MIDIStreaming itself) and find the MIDIStreaming
-// interface and its first IN and OUT endpoints. True if it has an IN.
+// interface and its first IN and OUT endpoints. True if it has an IN. The
+// interface ends where the next one starts that isn't one of its alternate
+// settings (or at the end of the len bytes): what a TinyUSB driver takes.
 bool usbmidi_find(const uint8_t *desc, uint32_t len, usbmidi_found_t *out);
 
 // A USB-MIDI event packet (cable/CIN, then up to 3 MIDI bytes): copies a

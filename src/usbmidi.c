@@ -3,8 +3,8 @@
 
 enum { DESC_INTERFACE = 4, DESC_ENDPOINT = 5, CLASS_AUDIO = 1, SUBCLASS_MIDISTREAMING = 3 };
 
-bool usbmidi_find(const uint8_t *p, uint32_t len, usbmidi_found_t *out) {
-    const uint8_t *end = p + len;
+bool usbmidi_find(const uint8_t *desc, uint32_t len, usbmidi_found_t *out) {
+    const uint8_t *p = desc, *end = desc + len;
     bool in_ms = false;
     out->ep_in = out->ep_out = 0;
     while (end - p >= 2 && p[0] >= 2 && p[0] <= end - p) {
@@ -21,6 +21,10 @@ bool usbmidi_find(const uint8_t *p, uint32_t len, usbmidi_found_t *out) {
         }
         p += p[0];
     }
+    while (end - p >= 2 && p[0] >= 2 && p[0] <= end - p &&
+           !(p[1] == DESC_INTERFACE && p[0] >= 9 && p[2] != out->ms_itf))
+        p += p[0];
+    out->len = (uint32_t)(p - desc);
     return out->ep_in != 0;
 }
 

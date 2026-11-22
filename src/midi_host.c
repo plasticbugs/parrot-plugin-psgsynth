@@ -1,11 +1,13 @@
 // midi_host.c -- see midi_host.h.
 //
 // TinyUSB hands an application driver each interface it finds while
-// enumerating (usbh_app_driver_get_cb). With CFG_TUH_MIDI set, usbh hands a
-// MIDI device's Audio Control and MIDIStreaming interfaces over together, as
-// one function, and the driver must report the last of them when its
-// set_config is done. A device whose MIDIStreaming interface comes on its
-// own (no Audio Control first) works too: open() then sees that interface.
+// enumerating (usbh_app_driver_get_cb), ahead of its own drivers, with the
+// rest of the configuration descriptor; open() returns how much of it the
+// driver takes. This one takes a MIDI device's Audio Control interface and
+// its MIDIStreaming interface together, as one function, and reports the
+// last of them when its set_config is done. A device whose MIDIStreaming
+// interface comes on its own (no Audio Control first) works too: open() then
+// sees that interface.
 //
 // On the RP2350's host controller a bulk IN endpoint gets its own polling
 // slot, so a transfer left waiting for keys doesn't hold up the control
@@ -37,19 +39,20 @@ static bool mh_init(void) {
 
 static bool mh_deinit(void) { return true; }
 
-static bool mh_open(uint8_t rhport, uint8_t daddr, tusb_desc_interface_t const *itf, uint16_t max_len) {
+// the bytes taken (from itf, its endpoints and what follows them), 0 if none
+static uint16_t mh_open(uint8_t rhport, uint8_t daddr, tusb_desc_interface_t const *itf, uint16_t max_len) {
     (void)rhport;
-    if (itf->bInterfaceClass != TUSB_CLASS_AUDIO || m.daddr) return false;
+    if (itf->bInterfaceClass != TUSB_CLASS_AUDIO || m.daddr) return 0;
     usbmidi_found_t f;
-    if (!usbmidi_find((const uint8_t *)itf, max_len, &f)) return false;
-    if (!tuh_edpt_open(daddr, (tusb_desc_endpoint_t const *)f.ep_in)) return false;
+    if (!usbmidi_find((const uint8_t *)itf, max_len, &f)) return 0;
+    if (!tuh_edpt_open(daddr, (tusb_desc_endpoint_t const *)f.ep_in)) return 0;
     m.daddr = daddr;
     m.ep_in = f.ep_in[2];
     m.ep_out = f.ep_out && tuh_edpt_open(daddr, (tusb_desc_endpoint_t const *)f.ep_out) ? f.ep_out[2] : 0;
     m.itf_last = f.ms_itf;
     m.configured = m.busy = m.out_busy = false;
     m.q_head = m.q_tail = 0;
-    return true;
+    return (uint16_t)f.len;
 }
 
 static bool mh_set_config(uint8_t daddr, uint8_t itf_num) {

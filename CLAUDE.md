@@ -85,8 +85,9 @@ it from the cart's menu. RESET on the console goes back to the menu.
   there.
 - It is a no_flash binary: the bootrom copies it into SRAM when the menu
   starts it.
-- It uses the pico-sdk's TinyUSB 0.18 with one hub fix
-  (`sdk/firmware/revc/midihello/tinyusb_fix`), not the SDK's newer TinyUSB.
+- Its USB host is the SDK's TinyUSB 0.21 (`sdk/firmware/revc/sdk/tinyusb`),
+  with the cart's hub fixes. TinyUSB's own MIDI host driver is left out
+  (`CFG_TUH_MIDI 0`): `src/midi_host.c` is the one.
 - A music keyboard needs a powered USB hub on the cart's port.
 
 ## The Claude skill
